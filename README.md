@@ -9,10 +9,29 @@
 
 ForgeQuote is a full-stack engineering prototype built from a manufacturing RFQ brief. It gives estimators one place to capture multi-part requests, cost parts from effective-dated rates, retain quote revisions and rate snapshots, and send revisions through Sales Head review. The responsive browser UI is backed by a FastAPI application and a relational database.
 
-> **Project status:** Review build; not a production deployment. No live application URL or client-provided quote workbook/drawing set is available. See [Known limits](#known-limits) and [deployment.md](deployment.md).
+## Live Demo & Verified Logins
+
+The application is deployed live with the frontend on Vercel and the backend on Render, connected to a managed Supabase PostgreSQL database:
+
+- **Frontend Application (Vercel):** [https://frontend-seven-tau-20.vercel.app](https://frontend-seven-tau-20.vercel.app)
+- **Backend API (Render):** [https://forgequote-api-aftaab.onrender.com](https://forgequote-api-aftaab.onrender.com)
+- **Interactive API Documentation (Swagger UI):** [https://forgequote-api-aftaab.onrender.com/docs](https://forgequote-api-aftaab.onrender.com/docs)
+- **API Health Endpoint:** [https://forgequote-api-aftaab.onrender.com/api/health](https://forgequote-api-aftaab.onrender.com/api/health)
+
+### Verified Demo Logins
+
+Both test accounts were seeded into your Supabase database and verified end-to-end through both the Vercel app and the Render backend:
+
+- **Estimator Account**:
+  - **Username:** `estimator@demo.local`
+  - **Password:** `estimate-demo-2026`
+- **Sales Head Account**:
+  - **Username:** `sales@demo.local`
+  - **Password:** `approve-demo-2026`
 
 ## Contents
 
+- [Live Demo & Verified Logins](#live-demo--verified-logins)
 - [Problem and scope](#problem-and-scope)
 - [Implemented capabilities](#implemented-capabilities)
 - [Architecture](#architecture)
@@ -329,7 +348,9 @@ Tests use isolated temporary SQLite databases and do not need live Supabase or A
 
 ## Screenshots and demo
 
-No screenshot assets or public hosted demo are included. To add verified captures, save them under `docs/screenshots/` and link the RFQ register, costing workspace, approval review, and PDF quote below. Avoid screenshots containing real customer names, drawings, credentials, or contact details.
+Live instances are available at [https://frontend-seven-tau-20.vercel.app](https://frontend-seven-tau-20.vercel.app) (Vercel) and [https://forgequote-api-aftaab.onrender.com](https://forgequote-api-aftaab.onrender.com) (Render). Use the [Verified Demo Logins](#verified-demo-logins) to access the estimator and sales workflows.
+
+To add local UI captures, save them under `docs/screenshots/` and link the RFQ register, costing workspace, approval review, and PDF quote below. Avoid screenshots containing real customer names, drawings, credentials, or contact details.
 
 ```text
 docs/screenshots/rfq-register.png
