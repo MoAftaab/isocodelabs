@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f5f6f4" />
+    <meta name="description" content="RFQ costing and quotation workspace" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <title>ForgeQuote — Estimation workspace</title>
+    <link rel="stylesheet" href="/static/styles.css?v=20261109-2" />
+    <link rel="stylesheet" href="/static/feature-overrides.css?v=20261109-2" />
+    <link rel="stylesheet" href="/static/assistant-polish.css?v=20261109-2" />
+  </head>
+  <body>
+    <div id="toast-region" aria-live="polite"></div>
+
+    <main id="login-view" class="login-shell hidden">
+      <section class="login-story">
+        <div class="brand-lockup light-brand"><span class="brand-mark">F</span><span>forgequote</span></div>
+        <div class="story-copy">
+          <div class="eyebrow light-eyebrow">ESTIMATION WORKSPACE</div>
+          <h1>Make every quote<br /><em>count.</em></h1>
+          <p>One calm, connected place to move from RFQ to a quote you can stand behind.</p>
+        </div>
+        <div class="story-foot"><span class="story-dot"></span> Private workspace · Demo data clearly marked</div>
+        <div class="story-orbit orbit-one"></div><div class="story-orbit orbit-two"></div>
+      </section>
+      <section class="login-form-wrap">
+        <div class="login-form-card">
+          <div class="eyebrow">WELCOME BACK</div>
+          <div class="hidden" id="login-notice" role="status"></div>
+          <h2>Sign in to continue</h2>
+          <p class="muted">Use a demo role to explore the workspace.</p>
+          <form id="login-form">
+            <label for="login-username">Work email</label>
+            <input id="login-username" autocomplete="username" required value="estimator@demo.local" />
+            <label for="login-password">Password</label>
+            <div class="password-wrap"><input id="login-password" type="password" autocomplete="current-password" required value="estimate-demo" /><button type="button" id="toggle-password" class="text-button">Show</button></div>
+            <button class="button button-primary button-full" type="submit"><span>Sign in</span><span aria-hidden="true">→</span></button>
+          </form>
+          <div class="demo-accounts">
+            <div class="demo-heading">DEMO ACCESS <span class="demo-pill">LOCAL</span></div>
+            <button class="demo-account" data-user="estimator@demo.local" data-pass="estimate-demo"><span class="avatar avatar-green">AE</span><span><strong>Estimator</strong><small>estimate-demo</small></span><span class="arrow">↗</span></button>
+            <button class="demo-account" data-user="estimator2@demo.local" data-pass="estimate2-demo"><span class="avatar avatar-green">NE</span><span><strong>Estimator</strong><small>estimate2-demo</small></span><span class="arrow">↗</span></button>
+            <button class="demo-account" data-user="sales@demo.local" data-pass="approve-demo"><span class="avatar avatar-amber">MS</span><span><strong>Sales Head</strong><small>approve-demo</small></span><span class="arrow">↗</span></button>
+          </div>
+          <div class="login-privacy"><span>◈</span> Sample workspace only. No customer drawings included.</div>
+        </div>
+        <div class="login-version">FORGEQUOTE · PRIVATE PREVIEW</div>
+      </section>
+    </main>
+
+    <div id="app-shell" class="app-shell hidden">
+      <aside class="sidebar">
+        <div class="brand-lockup"><span class="brand-mark">F</span><span>forgequote</span></div>
+        <div class="workspace-switch"><div class="workspace-symbol">A</div><div><strong>Company A</strong><small>Chakan · Pune</small></div><span class="chevron">⌄</span></div>
+        <div class="nav-label">WORKSPACE</div>
+        <nav class="main-nav" aria-label="Main navigation">
+          <button class="nav-item active" data-view="overview"><span class="nav-icon">▦</span><span>RFQ register</span><span class="nav-badge" id="rfq-nav-count">—</span></button>
+          <button class="nav-item estimator-only" data-view="costing"><span class="nav-icon">◫</span><span>Costing</span></button>
+          <button class="nav-item" data-view="rates"><span class="nav-icon">◷</span><span>Rate master</span></button>
+          <button class="nav-item sales-only" data-view="approvals"><span class="nav-icon">✓</span><span>Approvals</span><span class="nav-badge badge-amber" id="approval-nav-count">—</span></button>
+          <button class="nav-item" data-view="history"><span class="nav-icon">⌕</span><span>Quote history</span></button>
+        </nav>
+        <div class="sidebar-bottom">
+          <div class="workspace-status"><span class="status-led"></span><div><strong>Workspace ready</strong><small id="db-status">Local demo database</small></div></div>
+          <button class="user-menu" id="user-menu" aria-haspopup="dialog"><span class="avatar avatar-dark" id="user-avatar">AE</span><span class="user-meta"><strong id="user-name">Estimator</strong><small id="user-role">Estimator</small></span><span class="chevron">···</span></button>
+        </div>
+      </aside>
+
+      <section class="main-area">
+        <header class="topbar">
+          <div class="breadcrumb"><span>Company A</span><span class="crumb-slash">/</span><strong id="breadcrumb-current">RFQ register</strong></div>
+          <div class="topbar-actions">
+            <div class="search-global" id="search-global-box" title="Search quotes and RFQs (Ctrl+K)"><span>⌕</span><input id="global-search" placeholder="Search RFQs, parts, material…" /><kbd>Ctrl K</kbd></div>
+            <button class="icon-button" id="help-button" aria-label="Quick workflow guide" title="Workflow guide & shortcuts">?</button>
+            <button type="button" class="topbar-avatar" id="topbar-initials" aria-label="User profile and session" title="Account profile & settings">AE</button>
+          </div>
+        </header>
+
+        <main id="view-root" class="view-root" tabindex="-1"></main>
+        <footer class="app-footer"><span>ForgeQuote <span class="footer-sep">·</span> Private preview</span><span><span class="status-led small-led"></span> Data stays in this workspace</span></footer>
+      </section>
+    </div>
+
+    <div id="modal-root"></div>
+    <script src="/static/app.js?v=20261109-2" defer></script>
+  </body>
+</html>

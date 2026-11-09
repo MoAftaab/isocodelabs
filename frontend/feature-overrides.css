@@ -1,0 +1,15 @@
+.owner-assign{display:inline-flex;flex-direction:column;align-items:flex-start;gap:2px;border:0;background:transparent;padding:3px 0;color:var(--ink);text-align:left;font-size:11px}
+.owner-assign:hover{color:var(--green);text-decoration:underline}
+.owner-assign small{color:var(--muted);font-size:9px;text-decoration:none}
+.synthetic-import{display:flex;align-items:center;gap:8px;margin:12px 2px;color:var(--ink-2);font-size:11px}
+.column-map{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.column-map-row{display:flex;flex-direction:column;gap:5px;color:var(--ink-2);font-size:10px}
+.column-map-row b{color:var(--red)}
+.column-map-row select{min-height:34px;border:1px solid var(--line-strong);border-radius:7px;background:var(--white);padding:0 8px;color:var(--ink);font-size:10px}
+.route-editor{margin-top:16px;padding:13px;border:1px solid var(--line);border-radius:10px;background:#fbfcfb}
+.route-operation{display:grid;grid-template-columns:24px minmax(120px,1fr) minmax(140px,1fr) minmax(100px,.7fr) auto;gap:10px;align-items:end;padding:9px 0;border-bottom:1px solid var(--line)}
+.route-sequence{align-self:center;color:var(--muted);font-size:10px;font-weight:700}
+.route-operation .field input,.route-operation .field select{min-height:34px}
+.route-editor>[data-add-operation]{margin-top:10px}
+@media(max-width:760px){.route-operation{grid-template-columns:22px 1fr 1fr}.route-operation .text-button{grid-column:3;justify-self:end}}
+@media(max-width:620px){.column-map{grid-template-columns:1fr}}
