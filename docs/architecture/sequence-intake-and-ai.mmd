@@ -1,0 +1,44 @@
+sequenceDiagram
+    autonumber
+    actor Estimator as Estimator
+    participant UI as Frontend SPA
+    participant API as FastAPI Backend (main.py)
+    participant Storage as File Storage (Local / Supabase)
+    participant OCR as Local OCR / Parser
+    participant LLM as External AI Gateway (AgentRouter)
+    participant DB as Relational Database
+
+    Estimator->>UI: Drags & drops RFQ document (PDF / Drawing / XLSX)
+    UI->>API: POST /api/intake/file-extract (multipart/form-data, demo_only=bool)
+    
+    API->>Storage: persist_source() -> Writes raw binary payload
+    Storage-->>API: file_id confirmed
+    API->>DB: INSERT RFQSource (file_id, original_filename, size_bytes, media_type)
+    
+    API->>OCR: read_upload(filename, payload)
+    alt Scanned PDF or Image Drawing
+        OCR->>OCR: PyMuPDF pixmap rendering + pytesseract (Max 20 pages)
+        OCR-->>API: Extracted raw text, method="pdf-ocr" / "image-ocr"
+    else Excel Workbook (.xlsx)
+        OCR->>OCR: openpyxl cell stream extraction
+        OCR-->>API: Formatted rows, method="xlsx"
+    else Vector PDF / Text
+        OCR-->>API: Decoded text, method="pdf-text" / "text"
+    end
+
+    alt AI NDA Approved OR Demo Only Flag Set
+        API->>LLM: POST gateway_chat(conservative extraction prompt)
+        LLM-->>API: JSON {fields: [{name, value, source_excerpt, confidence}]}
+        API->>API: Validate source_excerpt is exact substring of document text
+        API->>API: Discard ungrounded or hallucinated fields
+        API-->>UI: 200 OK (file_id, fields, method, ai_used=true)
+    else NDA Not Approved / Customer Data Guard Active
+        API->>API: rule_extract() -> Local regex patterns (Part, Material, Weight, Cycle, RFQ#)
+        API-->>UI: 200 OK (file_id, fields, method, ai_used=false, note: "Local pattern suggestions only")
+    end
+
+    Estimator->>UI: Reviews suggestions, accepts/modifies, submits RFQ creation
+    UI->>API: POST /api/rfqs {rfq_number, customer, due_date, parts, source_file_ids: [file_id]}
+    API->>DB: Link RFQSource to created RFQ (rfq_sources.rfq_id)
+    API->>DB: INSERT RFQ and Part records
+    API-->>UI: 201 Created (RFQ register updated)

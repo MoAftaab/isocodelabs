@@ -1,0 +1,148 @@
+erDiagram
+    users ||--o{ rfqs : "owns"
+    users ||--o{ rfq_sources : "uploads"
+    users ||--o{ quote_revisions : "submits"
+    users ||--o{ approvals : "reviews"
+    users ||--o{ rate_versions : "edits"
+    users ||--o{ audit_events : "triggers"
+
+    rfqs ||--o{ parts : "contains"
+    rfqs ||--o{ quote_revisions : "generates"
+    rfqs ||--o{ rfq_sources : "references"
+
+    parts ||--o{ routing_operations : "defines"
+
+    quote_revisions ||--o{ approvals : "receives"
+
+    users {
+        int id PK
+        varchar username UK "String(120), index"
+        varchar display_name "String(120)"
+        varchar role "String(30), index"
+        varchar password_hash "String(300)"
+        boolean active "default true"
+    }
+
+    rfqs {
+        int id PK
+        varchar rfq_number UK "String(80), index"
+        varchar customer "String(180), index"
+        date received_date
+        date due_date "index"
+        int owner_id FK "users.id"
+        varchar status "String(30), index"
+        text loss_reason "nullable"
+        boolean synthetic "default false"
+        varchar source_label "String(80)"
+        datetime created_at
+        datetime updated_at
+    }
+
+    rfq_sources {
+        int id PK
+        varchar file_id UK "String(100), index"
+        int rfq_id FK "rfqs.id, nullable, index, CASCADE"
+        int uploaded_by FK "users.id, index"
+        varchar original_filename "String(255)"
+        varchar media_type "String(120)"
+        int size_bytes
+        varchar extraction_method "String(40), nullable"
+        text extraction_error "nullable"
+        datetime created_at
+    }
+
+    parts {
+        int id PK
+        int rfq_id FK "rfqs.id, index, CASCADE"
+        varchar part_name "String(180)"
+        varchar material "String(120)"
+        float gross_weight_kg
+        int annual_volume
+        float cycle_time_min
+        varchar machine_rate_key "String(120)"
+        float scrap_pct "default 0"
+        float overhead_per_part "default 0"
+        float freight_per_part "default 0"
+        float packing_per_part "default 0"
+        float margin_pct "default 15"
+        boolean synthetic "default false"
+        text source_ref "nullable"
+    }
+
+    routing_operations {
+        int id PK
+        int part_id FK "parts.id, index, CASCADE"
+        int sequence_no "Unique(part_id, sequence_no)"
+        varchar operation_name "String(120)"
+        varchar machine_rate_key "String(120)"
+        float cycle_time_min
+    }
+
+    rate_versions {
+        int id PK
+        varchar rate_type "String(30), index"
+        varchar rate_key "String(120), index"
+        varchar unit "String(30)"
+        float amount
+        date effective_from "index, Unique(type, key, from)"
+        date effective_to "nullable"
+        int editor_id FK "users.id, nullable"
+        boolean synthetic "default false"
+        datetime created_at
+    }
+
+    quote_revisions {
+        int id PK
+        int rfq_id FK "rfqs.id, index, CASCADE"
+        int revision_number "Unique(rfq_id, revision_number)"
+        varchar status "String(30), index"
+        text scenarios_json
+        text breakdown_json
+        text rate_snapshot_json
+        float annual_value "default 0"
+        float gst_rate_percent "default 0"
+        varchar formula_version "String(30), default cost-v1"
+        int submitted_by FK "users.id, nullable"
+        datetime created_at
+        datetime approved_at "nullable"
+        datetime sent_at "nullable"
+    }
+
+    approvals {
+        int id PK
+        int revision_id FK "quote_revisions.id, index"
+        int reviewer_id FK "users.id"
+        varchar decision "String(30)"
+        text reason "nullable"
+        datetime created_at
+    }
+
+    audit_events {
+        int id PK
+        int actor_id FK "users.id, nullable"
+        varchar action "String(80), index"
+        varchar entity_type "String(50)"
+        varchar entity_id "String(80)"
+        text detail
+        datetime created_at
+    }
+
+    historical_quotes {
+        int id PK
+        varchar batch_id "String(80), index, Unique(batch_id, row)"
+        int source_row
+        varchar rfq_number "String(100), index"
+        varchar customer "String(180), index"
+        varchar part_name "String(180), index"
+        varchar material "String(120), index"
+        float gross_weight_kg "nullable"
+        int annual_volume "nullable"
+        float cycle_time_min "nullable"
+        varchar routing_key "String(120), nullable"
+        float quoted_unit_price "nullable"
+        float quoted_annual_value "nullable"
+        date quoted_at "nullable"
+        varchar source_label "String(180)"
+        boolean synthetic "default false"
+        datetime created_at
+    }

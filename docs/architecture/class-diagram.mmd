@@ -1,0 +1,167 @@
+classDiagram
+    class Base {
+        <<DeclarativeBase>>
+    }
+
+    class User {
+        +int id
+        +str username
+        +str display_name
+        +str role
+        +str password_hash
+        +bool active
+    }
+
+    class RFQ {
+        +int id
+        +str rfq_number
+        +str customer
+        +date received_date
+        +date due_date
+        +int owner_id
+        +str status
+        +str loss_reason
+        +bool synthetic
+        +str source_label
+        +datetime created_at
+        +datetime updated_at
+        +User owner
+        +list[Part] parts
+        +list[QuoteRevision] revisions
+        +list[RFQSource] sources
+    }
+
+    class Part {
+        +int id
+        +int rfq_id
+        +str part_name
+        +str material
+        +float gross_weight_kg
+        +int annual_volume
+        +float cycle_time_min
+        +str machine_rate_key
+        +float scrap_pct
+        +float overhead_per_part
+        +float freight_per_part
+        +float packing_per_part
+        +float margin_pct
+        +bool synthetic
+        +str source_ref
+        +RFQ rfq
+        +list[RoutingOperation] routing_operations
+    }
+
+    class RoutingOperation {
+        +int id
+        +int part_id
+        +int sequence_no
+        +str operation_name
+        +str machine_rate_key
+        +float cycle_time_min
+        +Part part
+    }
+
+    class RFQSource {
+        +int id
+        +str file_id
+        +int rfq_id
+        +int uploaded_by
+        +str original_filename
+        +str media_type
+        +int size_bytes
+        +str extraction_method
+        +str extraction_error
+        +datetime created_at
+        +RFQ rfq
+    }
+
+    class RateVersion {
+        +int id
+        +str rate_type
+        +str rate_key
+        +str unit
+        +float amount
+        +date effective_from
+        +date effective_to
+        +int editor_id
+        +bool synthetic
+        +datetime created_at
+    }
+
+    class QuoteRevision {
+        +int id
+        +int rfq_id
+        +int revision_number
+        +str status
+        +str scenarios_json
+        +str breakdown_json
+        +str rate_snapshot_json
+        +float annual_value
+        +float gst_rate_percent
+        +str formula_version
+        +int submitted_by
+        +datetime created_at
+        +datetime approved_at
+        +datetime sent_at
+        +RFQ rfq
+    }
+
+    class Approval {
+        +int id
+        +int revision_id
+        +int reviewer_id
+        +str decision
+        +str reason
+        +datetime created_at
+    }
+
+    class AuditEvent {
+        +int id
+        +int actor_id
+        +str action
+        +str entity_type
+        +str entity_id
+        +str detail
+        +datetime created_at
+    }
+
+    class HistoricalQuote {
+        +int id
+        +str batch_id
+        +int source_row
+        +str rfq_number
+        +str customer
+        +str part_name
+        +str material
+        +float gross_weight_kg
+        +int annual_volume
+        +float cycle_time_min
+        +str routing_key
+        +float quoted_unit_price
+        +float quoted_annual_value
+        +date quoted_at
+        +str source_label
+        +bool synthetic
+        +datetime created_at
+    }
+
+    Base <|-- User
+    Base <|-- RFQ
+    Base <|-- Part
+    Base <|-- RoutingOperation
+    Base <|-- RFQSource
+    Base <|-- RateVersion
+    Base <|-- QuoteRevision
+    Base <|-- Approval
+    Base <|-- AuditEvent
+    Base <|-- HistoricalQuote
+
+    RFQ "1" *-- "many" Part : cascade delete-orphan
+    RFQ "1" *-- "many" QuoteRevision : cascade delete-orphan
+    RFQ "1" *-- "many" RFQSource : cascade delete-orphan
+    Part "1" *-- "many" RoutingOperation : cascade delete-orphan
+    QuoteRevision "1" *-- "many" Approval : tracks history
+    User "1" <-- "many" RFQ : owner
+    User "1" <-- "many" RFQSource : uploaded_by
+    User "1" <-- "many" QuoteRevision : submitted_by
+    User "1" <-- "many" Approval : reviewer

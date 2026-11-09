@@ -1,0 +1,54 @@
+flowchart TD
+    Start([Estimator Ingests RFQ Package]) --> Upload[Upload Document / XLSX / PDF Drawing]
+    
+    Upload --> SaveFile[Save Raw Bytes to Storage<br/>Local instance/uploads OR Supabase Bucket]
+    SaveFile --> ParseType{Document Format?}
+    
+    ParseType -->|Text / EML / CSV| TextParse[UTF-8 Stream Decode]
+    ParseType -->|Vector PDF| PDFText[Extract Text via PyMuPDF/pypdf]
+    ParseType -->|Scanned PDF / Image| OCR[Render Pages & Run Local Tesseract OCR<br/>Max 20 pages, English default]
+    ParseType -->|Excel Workbook| ExcelParse[Parse Sheets with openpyxl<br/>Extract key-value pairs]
+    
+    TextParse --> ExtractGate{AI Configured &<br/>NDA Approved?}
+    PDFText --> ExtractGate
+    OCR --> ExtractGate
+    ExcelParse --> ExtractGate
+    
+    ExtractGate -->|Yes: Model Allowed| LLMExtract[AI Prompt Extraction<br/>Exact Substring Citation Required]
+    ExtractGate -->|No: Local Heuristics| RuleExtract[Local Regex Pattern Extraction<br/>Non-AI Tagged Suggestions]
+    
+    LLMExtract --> ReviewIntake[Estimator Reviews Extracted Fields<br/>Selects Parts, Validates Dimensions]
+    RuleExtract --> ReviewIntake
+    
+    ReviewIntake --> SaveRFQ[(Save RFQ & Parts to Database)]
+    
+    SaveRFQ --> ConfigurePart[Estimator Configures Part Cost Inputs:<br/>Gross Weight, Multi-Op Routing, Scrap %, Margin %]
+    
+    ConfigurePart --> CostRequest[Select 2 or 3 Volume Scenarios<br/>Trigger Quote Calculation]
+    
+    CostRequest --> ResolveRates[Fetch Effective Material & Machine Rates<br/>Matching on_date interval]
+    
+    ResolveRates --> DecimalEngine[Deterministic Decimal Engine<br/>• Yield loss scrap adjustment<br/>• Cycle time sum across routing ops<br/>• Fixed overhead, freight, packing adders<br/>• Markup % on unit cost<br/>• Currency Half-Up rounding]
+    
+    DecimalEngine --> SnapshotRevision[(Create QuoteRevision<br/>Snapshot Rates, GST Rate, Breakdown JSON)]
+    
+    SnapshotRevision --> SubmitReview[Estimator Submits Revision<br/>RFQ & Revision Status -> pending_approval]
+    
+    SubmitReview --> SalesReview{Sales Head Evaluates}
+    
+    SalesReview -->|Return| Returned[Status -> returned<br/>Mandatory Reason Recorded<br/>RFQ back to estimating]
+    Returned --> ConfigurePart
+    
+    SalesReview -->|Approve| Approved[Status -> approved<br/>Approved Timestamp Recorded<br/>Statutory ₹25L Rule Checked]
+    
+    Approved --> GeneratePDF[Generate Audit-Proof PDF via ReportLab<br/>Itemized Costs, Scrap, Margin & Separate GST]
+    
+    GeneratePDF --> ManualDispatch[Sales Head Dispatches PDF to Customer]
+    ManualDispatch --> MarkSent[Sales Head Records Sent<br/>Status -> sent]
+    
+    MarkSent --> CommercialOutcome{Customer Decision}
+    CommercialOutcome -->|Won| Won[Status -> won]
+    CommercialOutcome -->|Lost| Lost[Status -> lost<br/>Mandatory Loss Reason Stored]
+    
+    Won --> EndState([RFQ Lifecycle Complete])
+    Lost --> EndState

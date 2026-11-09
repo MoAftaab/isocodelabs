@@ -1,0 +1,59 @@
+classDiagram
+    class FastAPIApp {
+        +app: FastAPI
+        +startup()
+        +health()
+        +login()
+        +logout()
+        +me()
+    }
+
+    class SecurityModule {
+        +SESSION_SECRET: str
+        +SESSIONS: dict
+        +password_hash(password, salt)
+        +verify_password(password, encoded)
+        +new_session(user_id)
+        +session_user(token)
+        +check_csrf(token, supplied)
+    }
+
+    class DatabaseModule {
+        +Base: DeclarativeBase
+        +DATABASE_URL: str
+        +engine: Engine
+        +SessionLocal: sessionmaker
+        +get_db()
+    }
+
+    class CostingModule {
+        +d(value): Decimal
+        +money(value): Decimal
+        +calculate_part(part, material_rate, machine_rate, volumes, route_rates): list
+    }
+
+    class DocumentIntakeModule {
+        +read_upload(filename, payload)
+        +ocr_image(image)
+        +extract_xlsx_parts(text, filename)
+        +rule_extract(text, filename)
+        +persist_source(db, user, filename, media_type, payload)
+    }
+
+    class AIIntegrationModule {
+        +gateway_chat(messages, json_mode, max_tokens)
+        +ai_extract(text, filename)
+        +assistant_chat(body, db, user)
+        +routing_suggestions(part_id, db, user)
+    }
+
+    class PDFGenerationModule {
+        +quote_pdf(revision_id, db, user)
+    }
+
+    FastAPIApp --> SecurityModule : Enforces auth & CSRF
+    FastAPIApp --> DatabaseModule : Obtains Sessions
+    FastAPIApp --> CostingModule : Computes part & scenario costs
+    FastAPIApp --> DocumentIntakeModule : Ingests drawings, excel & text
+    FastAPIApp --> AIIntegrationModule : Proxies assistant & extraction
+    FastAPIApp --> PDFGenerationModule : Formats approved cost breakdown

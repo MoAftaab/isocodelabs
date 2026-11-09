@@ -1,0 +1,68 @@
+sequenceDiagram
+    autonumber
+    actor Estimator as Estimator
+    participant UI as Frontend SPA (Browser)
+    participant API as FastAPI Backend (main.py)
+    participant Cost as Costing Engine (costing.py)
+    participant DB as Relational Database
+    actor Sales as Sales Head
+
+    Note over Estimator, DB: Phase 1: Costing & Draft Revision Generation
+    Estimator->>UI: Selects RFQ and enters cost inputs (Weight, Scrap %, Routing, Margin %)
+    UI->>API: PATCH /api/parts/{part_id} (PartPatch + RoutingOperations)
+    API->>DB: Update Part and replace RoutingOperation records
+    API-->>UI: 200 OK (Updated part details)
+
+    Estimator->>UI: Selects volumes [e.g. 10000, 50000, 180000] and clicks "Calculate Quote"
+    UI->>API: POST /api/rfqs/{rfq_id}/cost {volumes: [10000, 50000, 180000]}
+    API->>DB: Query Effective Material & Machine Rates (RateVersion)
+    DB-->>API: Active rate records
+    API->>Cost: calculate_part(...) with Python Decimal
+    Cost-->>API: Exact line-item cost scenarios & annual values
+    API->>DB: INSERT QuoteRevision (status='draft', breakdown_json, rate_snapshot_json, gst_rate_percent)
+    DB-->>API: revision_id
+    API->>DB: INSERT AuditEvent (calculate_quote)
+    API-->>UI: 200 OK (Calculated breakdown, scenarios, GST amounts)
+
+    Estimator->>UI: Clicks "Submit for Approval"
+    UI->>API: POST /api/revisions/{revision_id}/submit
+    API->>DB: UPDATE QuoteRevision (status='pending_approval')
+    API->>DB: UPDATE RFQ (status='pending_approval')
+    API->>DB: INSERT AuditEvent (submit_for_approval)
+    API-->>UI: 200 OK (Status updated)
+
+    Note over Sales, DB: Phase 2: Sales Governance & Commercial Approval
+    Sales->>UI: Navigates to Approvals view
+    UI->>API: GET /api/approvals
+    API->>DB: Query revisions WHERE status='pending_approval'
+    DB-->>API: Pending quote list
+    API-->>UI: 200 OK (Queue items with breakdowns and rate snapshots)
+
+    alt Sales Returns Quote
+        Sales->>UI: Enters return feedback and clicks "Return"
+        UI->>API: POST /api/revisions/{revision_id}/decision {decision: 'return', reason: 'Re-negotiate raw material rate'}
+        API->>DB: INSERT Approval (decision='return', reason)
+        API->>DB: UPDATE QuoteRevision (status='returned'), UPDATE RFQ (status='estimating')
+        API->>DB: INSERT AuditEvent (quote_return)
+        API-->>UI: 200 OK (Quote returned to estimator)
+    else Sales Approves Quote
+        Sales->>UI: Clicks "Approve Quote"
+        UI->>API: POST /api/revisions/{revision_id}/decision {decision: 'approve'}
+        API->>DB: Check annual value > ₹25L statutory threshold
+        API->>DB: INSERT Approval (decision='approve')
+        API->>DB: UPDATE QuoteRevision (status='approved', approved_at=now)
+        API->>DB: UPDATE RFQ (status='approved')
+        API->>DB: INSERT AuditEvent (quote_approve)
+        API-->>UI: 200 OK (Status approved, threshold_flag)
+
+        Sales->>UI: Clicks "Download PDF"
+        UI->>API: GET /api/revisions/{revision_id}/pdf
+        API->>DB: Fetch QuoteRevision, RFQ, Part details
+        API->>API: Build ReportLab Document (Table, GST breakups, Synthetic disclaimers)
+        API-->>UI: 200 OK (application/pdf stream)
+
+        Sales->>UI: Dispatches to customer and clicks "Mark Sent"
+        UI->>API: POST /api/revisions/{revision_id}/sent
+        API->>DB: UPDATE QuoteRevision (status='sent'), UPDATE RFQ (status='sent')
+        API-->>UI: 200 OK
+    end

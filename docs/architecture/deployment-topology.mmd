@@ -1,0 +1,75 @@
+graph TB
+    subgraph Users ["User Personas"]
+        Estimator["Estimator (Desktop / Tablet)"]
+        SalesHead["Sales Head (Desktop / Tablet)"]
+    end
+
+    subgraph CurrentDemo ["Current Review Topology (Single Process / Local Demo)"]
+        direction TB
+        subgraph DevHost ["Local Developer Workstation / Host VM"]
+            UvicornDemo["Uvicorn Process (:8000)<br/>Python 3.12 + FastAPI"]
+            MemorySession["In-Memory SESSIONS Dict<br/>(12h TTL, non-persistent)"]
+            DiskStorage["instance/uploads/<br/>Local binary storage"]
+            LocalSQLite[("instance/forgequote.db<br/>SQLite fallback")]
+            TesseractLocal["Host Tesseract CLI<br/>(TESSERACT_CMD)"]
+        end
+        UvicornDemo --> MemorySession
+        UvicornDemo --> DiskStorage
+        UvicornDemo --> LocalSQLite
+        UvicornDemo --> TesseractLocal
+    end
+
+    subgraph TargetProduction ["Target Enterprise Cloud Topology (Production Readiness)"]
+        direction TB
+        CloudFlare["Cloudflare / AWS ALB<br/>• TLS Termination (HTTPS)<br/>• DDoS & WAF Protection<br/>• Strict Cookie Policies"]
+        
+        subgraph ContainerCluster ["Container Orchestration (ECS / GKE / K8s)"]
+            Pod1["FastAPI Pod 1<br/>Uvicorn Workers"]
+            Pod2["FastAPI Pod 2<br/>Uvicorn Workers"]
+            PodN["FastAPI Pod N<br/>Autoscaling Replica"]
+        end
+
+        subgraph RedisTier ["Distributed Cache & State Store"]
+            RedisCluster[("Redis Cluster / AWS ElastiCache<br/>• Distributed Sessions<br/>• Rate Limiting<br/>• Ephemeral Import Buffers")]
+        end
+
+        subgraph AsyncWorkers ["Asynchronous Task Workers (Celery / ARQ)"]
+            OCRWorker["OCR & PDF Worker Pod<br/>• Sandboxed Tesseract<br/>• Large Drawing Parsing"]
+            ImportWorker["Batch Import Worker<br/>• 10,000+ Row Workbooks"]
+        end
+
+        subgraph CloudStorageTier ["Managed Cloud Services"]
+            SupabaseStorageProd["Supabase Storage / AWS S3<br/>• Private Bucket: rfq-source-documents<br/>• Server-side Encryption (SSE-S3)<br/>• Signed URL Access"]
+            SupabasePostgresProd[("Supabase PostgreSQL (v15+)<br/>• Read/Write Primary + Replica<br/>• PgBouncer Connection Pool<br/>• Daily Automated Snapshots")]
+        end
+
+        subgraph ExtAI ["Enterprise AI Gateway"]
+            AIEndpoint["AgentRouter / Azure OpenAI<br/>• Dedicated VPC Peering<br/>• Zero Data Retention (NDA)"]
+        end
+
+        CloudFlare --> Pod1
+        CloudFlare --> Pod2
+        CloudFlare --> PodN
+
+        Pod1 --> RedisCluster
+        Pod2 --> RedisCluster
+        PodN --> RedisCluster
+
+        Pod1 --> SupabasePostgresProd
+        Pod2 --> SupabasePostgresProd
+        PodN --> SupabasePostgresProd
+
+        Pod1 --> SupabaseStorageProd
+        Pod2 --> SupabaseStorageProd
+        PodN --> SupabaseStorageProd
+
+        Pod1 --> RedisTier
+        AsyncWorkers --> RedisTier
+        AsyncWorkers --> SupabasePostgresProd
+        AsyncWorkers --> SupabaseStorageProd
+
+        Pod1 --> ExtAI
+    end
+
+    Users -->|Review / Demo| CurrentDemo
+    Users -.->|Target Enterprise| CloudFlare

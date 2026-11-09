@@ -1,0 +1,64 @@
+graph TB
+    subgraph ClientTier ["Client Tier (Browser)"]
+        SPA["Vanilla JS SPA (app.js)<br/>• Reactive State Store<br/>• View Routers & Modals<br/>• Currency & Date Formatters"]
+        CSS["Design System<br/>• styles.css<br/>• feature-overrides.css<br/>• assistant-polish.css"]
+    end
+
+    subgraph EdgeAndAppTier ["Application Tier (FastAPI Service)"]
+        direction TB
+        AppServer["Uvicorn ASGI Server (:8000)"]
+        
+        subgraph MiddlewarePipeline ["Security & Interception"]
+            AuthGuard["Session & Auth Guard<br/>• Cookie: fq_session (12h TTL)<br/>• SESSIONS dict validation"]
+            CSRFGuard["CSRF Protection<br/>• X-CSRF-Token validation<br/>• Constant-time comparison"]
+            RBACGuard["Role Access Guard<br/>• Estimator vs Sales Head permissions"]
+            AuditLogger["Audit Event Bus<br/>• Synchronous write to audit_events"]
+        end
+
+        subgraph CoreEngines ["Core Business Engines"]
+            CostingEngine["Deterministic Cost Engine (costing.py)<br/>• Python Decimal (0.01 precision)<br/>• Yield Scrap Calculation<br/>• Multi-Op Machine Routing<br/>• Scenarios & Margins"]
+            RateManager["Effective-Date Rate Master<br/>• Temporal validity resolution<br/>• Auto-closing prior periods"]
+            ApprovalEngine["Quote Governance & State Machine<br/>• Draft -> Pending -> Approved / Returned<br/>• Sent -> Won / Lost (Mandatory Reason)"]
+            DocGenerator["ReportLab PDF Generator<br/>• Audit-proof Cost Breakup<br/>• GST Snapshot & Synthetic Banner"]
+        end
+
+        subgraph IngestionAndAITier ["Intake, OCR & AI Integration"]
+            FileParser["Document Ingestion Engine<br/>• PyMuPDF (fitz) / pypdf<br/>• openpyxl (Streaming Workbook)<br/>• pytesseract (Max 20 pages OCR)"]
+            RuleExtractor["Local Pattern Extractor<br/>• Regex heuristics (Non-AI)<br/>• Fallback confidence scoring"]
+            AIGatewayAdapter["AI Gateway Adapter (gateway_chat)<br/>• OpenAI / Anthropic Protocols<br/>• NDA Compliance Enforcement<br/>• AgentRouter (gpt-6.1-sol)"]
+            RAGRanker["Historical RAG & Route Ranker<br/>• Attribute token similarity<br/>• Constrained model citation"]
+        end
+    end
+
+    subgraph PersistenceTier ["Persistence & Storage Tier"]
+        subgraph RelationalDB ["Relational Store (SQLAlchemy 2.0 + Alembic)"]
+            SQLiteDB[("Local SQLite (instance/forgequote.db)<br/>Default demo storage")]
+            PostgresDB[("Supabase Managed PostgreSQL<br/>Target cloud relational database")]
+        end
+        subgraph ObjectStorage ["Binary Object Storage"]
+            LocalStorage["Local Disk (instance/uploads)<br/>Demo file persistence"]
+            SupabaseStorage["Supabase Private Storage<br/>Bucket: rfq-source-documents"]
+        end
+    end
+
+    subgraph ExternalServices ["External Cloud Services"]
+        LLMProvider["Hosted LLM Gateway<br/>AgentRouter / Lumosel<br/>(gpt-6.1-sol / claude-opus-4-8)"]
+    end
+
+    SPA -->|HTTP/REST + JSON| AppServer
+    AppServer --> MiddlewarePipeline
+    MiddlewarePipeline --> CoreEngines
+    MiddlewarePipeline --> IngestionAndAITier
+
+    CostingEngine --> RateManager
+    ApprovalEngine --> DocGenerator
+    ApprovalEngine --> CostingEngine
+
+    IngestionAndAITier -->|Local OCR Process| AppServer
+    AIGatewayAdapter -->|HTTPS / Bearer Auth| LLMProvider
+    RAGRanker --> RelationalDB
+
+    CoreEngines -->|SQL Queries / ORM| RelationalDB
+    IngestionAndAITier -->|Source Document Metadata| RelationalDB
+    IngestionAndAITier -->|Store File Bytes| ObjectStorage
+    DocGenerator -->|Read Revision Data| RelationalDB
