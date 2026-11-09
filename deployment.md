@@ -1,5 +1,25 @@
 # ForgeQuote deployment guide
 
+## Live deployment and reviewer access
+
+| Component | Provider | Live URL | Verified status |
+| --- | --- | --- | --- |
+| Frontend application | Vercel | <https://frontend-seven-tau-20.vercel.app> | HTTP 200; app served and API proxy responds. |
+| Backend and API | Render | <https://forgequote-api-aftaab.onrender.com> | HTTP 200. |
+| API health | Render | <https://forgequote-api-aftaab.onrender.com/api/health> | HTTP 200; PostgreSQL and Supabase Storage connected. AI unavailable. |
+| Interactive API docs | Swagger UI | <https://forgequote-api-aftaab.onrender.com/docs> | HTTP 200. |
+
+### Verified demo logins
+
+Both accounts were seeded in the Supabase-backed application and verified end-to-end through both the direct Render API and the Vercel frontend proxy. Login, authenticated session lookup, and logout succeeded for both roles.
+
+| Role | Username | Password |
+| --- | --- | --- |
+| Estimator | `estimator@demo.local` | `estimate-demo-2026` |
+| Sales Head | `sales@demo.local` | `approve-demo-2026` |
+
+These credentials are intentionally published for reviewer access to the synthetic demo workspace. They are not production credentials. AI inference currently reports unavailable; configure an approved AI key and verify the provider before claiming live AI functionality.
+
 ## Local run
 
 1. Install Python 3.12 or newer.
@@ -59,7 +79,7 @@ GST defaults to zero until the client supplies an approved rate. Keep AI_NDA_APP
 
 ## Hosted review deployment
 
-No live application URL is currently provided. Deploy the FastAPI application to a Python 3.12 host with TLS, set required variables in the host's private configuration panel, apply Alembic migrations, bootstrap named users, configure a private Supabase Storage bucket, and verify health, sign-in, source file access, costing, approval, and PDF download. Use a shared session store and secure cookie settings before running multiple processes. Do not expose local demo credentials in a shared deployment.
+The current public review deployment is listed at the top of this guide. For a new hosted deployment, use a Python 3.12 host with TLS, set required variables in the host's private configuration panel, apply Alembic migrations, bootstrap named users, configure a private Supabase Storage bucket, and verify health, sign-in, source file access, costing, approval, and PDF download. Use a shared session store and secure cookie settings before running multiple processes.
 
 ## Render API + Vercel frontend
 

@@ -29,6 +29,26 @@
 
 ---
 
+#### Live Deployment and Verified Reviewer Access
+
+| Component | Provider | Live URL | Verified status |
+|---|---|---|---|
+| Frontend application | Vercel | [https://frontend-seven-tau-20.vercel.app](https://frontend-seven-tau-20.vercel.app) | HTTP 200; application page served. |
+| Backend and API | Render | [https://forgequote-api-aftaab.onrender.com](https://forgequote-api-aftaab.onrender.com) | HTTP 200; FastAPI service responds. |
+| API health | Render | [https://forgequote-api-aftaab.onrender.com/api/health](https://forgequote-api-aftaab.onrender.com/api/health) | HTTP 200; PostgreSQL and Supabase Storage connected. AI reports unavailable. |
+| Interactive API documentation | Swagger UI | [https://forgequote-api-aftaab.onrender.com/docs](https://forgequote-api-aftaab.onrender.com/docs) | HTTP 200; interactive OpenAPI docs load. |
+
+Both reviewer accounts were verified through the Render backend and the Vercel frontend proxy. Sign-in, authenticated `/api/me`, and sign-out succeeded for both roles.
+
+| Role | Username | Password |
+|---|---|---|
+| Estimator | `estimator@demo.local` | `estimate-demo-2026` |
+| Sales Head | `sales@demo.local` | `approve-demo-2026` |
+
+These are intentional reviewer demo credentials for the synthetic sample workspace. Do not reuse them for production access. The health response currently reports AI unavailable; no successful live AI inference is claimed by this deployment status.
+
+---
+
 ### 2. Executive Summary
 
 #### 2.1 What is the System?

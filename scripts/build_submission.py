@@ -34,6 +34,8 @@ STYLE = {
         textColor=INK, spaceBefore=12, spaceAfter=6, keepWithNext=True),
     "h2": ParagraphStyle("H2", parent=BASE["Heading2"], fontName=BOLD, fontSize=10.5, leading=13,
         textColor=GREEN, spaceBefore=8, spaceAfter=4, keepWithNext=True),
+    "h3": ParagraphStyle("H3", parent=BASE["Heading3"], fontName=BOLD, fontSize=9.2, leading=11.5,
+        textColor=GREEN, spaceBefore=6, spaceAfter=3, keepWithNext=True),
     "body": ParagraphStyle("B", parent=BASE["BodyText"], fontName=REGULAR, fontSize=8.7,
         leading=12.4, textColor=INK, spaceAfter=5),
     "bullet": ParagraphStyle("L", parent=BASE["BodyText"], fontName=REGULAR, fontSize=8.5,
@@ -48,6 +50,12 @@ STYLE = {
 
 
 def inline(value):
+    links = []
+    def hold_link(match):
+        token = f"CODEXLINK{len(links)}TOKEN"
+        links.append((token, match.group(1), match.group(2)))
+        return token
+    value = re.sub(r"\[([^\]]+)\]\((https?://[^)\s]+)\)", hold_link, value)
     value = escape(value)
     value = re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", value)
     value = re.sub(r"(?<!\*)\*([^*]+?)\*(?!\*)", r"<i>\1</i>", value)
@@ -55,6 +63,9 @@ def inline(value):
     value = re.sub("(?<!"+tick+")"+tick+"([^"+tick+"]+)"+tick+"(?!"+tick+")",
                    r"<font name='Forge-Bold'>\1</font>", value)
     value = re.sub(r"(https?://[^\s]+)", r"<font color='#276a52'>\1</font>", value)
+    for token, label, href in links:
+        anchor = f"<link href='{escape(href)}' color='#276a52'>{escape(label)}</link>"
+        value = value.replace(token, anchor)
     return value
 
 
@@ -66,6 +77,9 @@ def build_story(markdown):
         if not line:
             index += 1
             continue
+        if line in ("---", "***", "___"):
+            index += 1
+            continue
         if line.startswith("# "):
             story.append(Paragraph(inline(line[2:]), STYLE["title"] if not titled else STYLE["h1"]))
             titled = True
@@ -75,6 +89,10 @@ def build_story(markdown):
             if line.startswith("## 8. Assumptions"):
                 story.append(PageBreak())
             story.append(Paragraph(inline(line[3:]), STYLE["h1"]))
+            index += 1
+            continue
+        if line.startswith("#### "):
+            story.append(Paragraph(inline(line[5:]), STYLE["h3"]))
             index += 1
             continue
         if line.startswith("### "):
