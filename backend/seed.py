@@ -1,5 +1,6 @@
 import random
 import json
+import os
 from datetime import date, datetime, timedelta, timezone
 
 from .costing import calculate_part
@@ -27,9 +28,12 @@ MACHINE_RATES = {"Turning cell": 850.0, "Forging machining": 1450.0, "Gear cutti
                  "General machining": 920.0, "Precision grinding": 1280.0}
 
 
-def seed_database(db):
-    if db.query(User).first():
-        if not db.query(User).filter_by(username="estimator2@demo.local").first():
+def seed_database(db, local_demo: bool | None = None):
+    if local_demo is None:
+        local_demo = db.get_bind().dialect.name == "sqlite"
+    existing_users = db.query(User).all()
+    if db.query(RFQ).first():
+        if local_demo and not db.query(User).filter_by(username="estimator2@demo.local").first():
             db.add(User(username="estimator2@demo.local", display_name="Nisha · Estimator", role="estimator",
                         password_hash=password_hash("estimate2-demo")))
         for part in db.query(Part).filter(Part.synthetic.is_(True)).all():
@@ -46,13 +50,30 @@ def seed_database(db):
                     ])
             db.commit()
         return
-    estimator = User(username="estimator@demo.local", display_name="Aarav · Estimator", role="estimator",
-                     password_hash=password_hash("estimate-demo"))
-    estimator_two = User(username="estimator2@demo.local", display_name="Nisha · Estimator", role="estimator",
-                         password_hash=password_hash("estimate2-demo"))
-    sales = User(username="sales@demo.local", display_name="Mira · Sales Head", role="sales",
-                 password_hash=password_hash("approve-demo"))
-    db.add_all([estimator, estimator_two, sales])
+    estimator_username = os.getenv("BOOTSTRAP_ESTIMATOR_USERNAME", "estimator@demo.local").strip()
+    estimator_password = os.getenv("BOOTSTRAP_ESTIMATOR_PASSWORD", "estimate-demo")
+    sales_username = os.getenv("BOOTSTRAP_SALES_USERNAME", "sales@demo.local").strip()
+    sales_password = os.getenv("BOOTSTRAP_SALES_PASSWORD", "approve-demo")
+    if not local_demo and (not estimator_username or len(estimator_password) < 12
+                           or not sales_username or len(sales_password) < 12):
+        raise RuntimeError("Hosted demo seeding requires private bootstrap usernames and 12+ character passwords.")
+    estimator = next((u for u in existing_users if u.username == estimator_username), None)
+    estimator = estimator or next((u for u in existing_users if u.role == "estimator"), None)
+    if estimator is None:
+        estimator = User(username=estimator_username,
+                         display_name="Aarav · Estimator" if local_demo else "Estimator",
+                         role="estimator", password_hash=password_hash(estimator_password))
+        db.add(estimator)
+    sales = next((u for u in existing_users if u.username == sales_username), None)
+    sales = sales or next((u for u in existing_users if u.role == "sales"), None)
+    if sales is None:
+        sales = User(username=sales_username,
+                     display_name="Mira · Sales Head" if local_demo else "Sales Head",
+                     role="sales", password_hash=password_hash(sales_password))
+        db.add(sales)
+    if local_demo and not db.query(User).filter_by(username="estimator2@demo.local").first():
+        db.add(User(username="estimator2@demo.local", display_name="Nisha · Estimator", role="estimator",
+                    password_hash=password_hash("estimate2-demo")))
     db.flush()
     today = date.today()
 

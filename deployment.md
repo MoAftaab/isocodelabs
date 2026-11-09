@@ -61,6 +61,20 @@ GST defaults to zero until the client supplies an approved rate. Keep AI_NDA_APP
 
 No live application URL is currently provided. Deploy the FastAPI application to a Python 3.12 host with TLS, set required variables in the host's private configuration panel, apply Alembic migrations, bootstrap named users, configure a private Supabase Storage bucket, and verify health, sign-in, source file access, costing, approval, and PDF download. Use a shared session store and secure cookie settings before running multiple processes. Do not expose local demo credentials in a shared deployment.
 
+## Render API + Vercel frontend
+
+The deployment configuration is split intentionally: Render runs the Dockerized FastAPI service (`render.yaml`, `Dockerfile`), while Vercel publishes `frontend/` and proxies `/api/*` and `/static/*` to that service. The proxy preserves the browser's same-origin cookie and CSRF flow; the browser does not need direct cross-origin API access.
+
+1. Rotate any database or Supabase secret that was previously pasted into chat before using it on a hosted service. Do not commit credentials.
+2. Authenticate the CLIs with `render login` and `vercel login`. Validate the Render Blueprint with `render blueprints validate ./render.yaml`.
+3. Create a Render Blueprint from `MoAftaab/isocodelabs` on branch `main`, using the checked-in `render.yaml`. Choose the free preview plan; it sleeps when idle and is not suitable for production.
+4. At Blueprint creation, provide the `sync: false` values in Render's private environment form: `DATABASE_URL`, `SUPABASE_URL`, `SUPABASE_SECRET_KEY`, the two bootstrap usernames, and two unique passwords of at least 12 characters. Keep the AI key unset until the client has approved hosted inference terms. `SEED_DEMO_DATA=true` seeds fictional sample records; hosted account names/passwords are read from the private bootstrap variables rather than the local demo credentials.
+5. Wait for `/api/health` to report PostgreSQL, AI status, and Supabase Storage as expected. Copy the actual Render `onrender.com` URL from the service dashboard; Render may add a unique suffix to the service slug.
+6. Update both external rewrite destinations in `frontend/vercel.json` to use that exact Render origin. Run `vercel link` from the `frontend/` directory to create/select the Vercel project with the frontend as its root, then deploy with `vercel --prod` from that directory.
+7. Verify the Vercel root page, login/logout, API health through the Vercel origin, RFQ creation, costing, Sales Head approval, and PDF download. Keep `COOKIE_SECURE=true` on Render. Do not configure CORS for this same-origin proxy deployment.
+
+The Render free service has no persistent local disk and may restart or sleep. RFQ source files are kept in Supabase Storage when configured; import previews remain temporary and sessions are in-memory. This is a review deployment, not a production availability or durability guarantee. Vercel uses no secret environment variables for the static frontend.
+
 ## Test and seed
 
 Run python -m pytest -q from the repository root. Tests should run with Supabase Storage credentials unset so fixtures cannot upload to the live bucket. For local SQLite, synthetic demo records seed automatically. For PostgreSQL, explicitly set SEED_DEMO_DATA=true only when intentionally loading fictional demo records; leave it false for customer environments.

@@ -264,3 +264,59 @@ def test_1400_row_synthetic_workbook_import():
         page = client.get("/api/history?q=DEMO-1400-1399&page=1&page_size=10").json()
         assert page["total"] == 1
         assert page["items"][0]["synthetic"] is True
+
+
+def test_hosted_seed_uses_private_bootstrap_accounts(monkeypatch):
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import Session
+    from backend.database import Base
+    from backend.models import RFQ, User
+    from backend.seed import seed_database
+    from backend.security import verify_password
+
+    monkeypatch.setenv("BOOTSTRAP_ESTIMATOR_USERNAME", "review-estimator@example.invalid")
+    monkeypatch.setenv("BOOTSTRAP_ESTIMATOR_PASSWORD", "unique-estimator-pass-123")
+    monkeypatch.setenv("BOOTSTRAP_SALES_USERNAME", "review-sales@example.invalid")
+    monkeypatch.setenv("BOOTSTRAP_SALES_PASSWORD", "unique-sales-pass-456")
+    engine = create_engine("sqlite://")
+    Base.metadata.create_all(engine)
+    with Session(engine) as db:
+        seed_database(db, local_demo=False)
+        users = db.query(User).all()
+        assert {user.username for user in users} == {
+            "review-estimator@example.invalid", "review-sales@example.invalid"}
+        assert verify_password("unique-estimator-pass-123",
+                              next(user.password_hash for user in users if user.role == "estimator"))
+        assert db.query(RFQ).count() == 27
+    engine.dispose()
+
+
+def test_hosted_seed_populates_data_after_bootstrap_users(monkeypatch):
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import Session
+    from backend.database import Base
+    from backend.models import RFQ, User
+    from backend.seed import seed_database
+    from backend.security import password_hash, verify_password
+
+    monkeypatch.setenv("BOOTSTRAP_ESTIMATOR_USERNAME", "review-estimator@example.invalid")
+    monkeypatch.setenv("BOOTSTRAP_ESTIMATOR_PASSWORD", "unique-estimator-pass-123")
+    monkeypatch.setenv("BOOTSTRAP_SALES_USERNAME", "review-sales@example.invalid")
+    monkeypatch.setenv("BOOTSTRAP_SALES_PASSWORD", "unique-sales-pass-456")
+    engine = create_engine("sqlite://")
+    Base.metadata.create_all(engine)
+    with Session(engine) as db:
+        db.add_all([
+            User(username="review-estimator@example.invalid", display_name="Estimator", role="estimator",
+                 password_hash=password_hash("unique-estimator-pass-123")),
+            User(username="review-sales@example.invalid", display_name="Sales Head", role="sales",
+                 password_hash=password_hash("unique-sales-pass-456")),
+        ])
+        db.commit()
+        seed_database(db, local_demo=False)
+        users = db.query(User).all()
+        assert len(users) == 2
+        assert db.query(RFQ).count() == 27
+        assert verify_password("unique-sales-pass-456",
+                              next(user.password_hash for user in users if user.role == "sales"))
+    engine.dispose()

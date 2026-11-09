@@ -72,7 +72,7 @@ flowchart LR
     PDF -->|Authenticated download| U
 ```
 
-The browser assets are served by FastAPI from `frontend/`; there is no separate frontend build or deployment. SQLAlchemy models describe the relational data, and Alembic migrations evolve the schema. SQLite is the default local database. PostgreSQL is supported for hosted/review environments. Source files use a private Supabase Storage bucket when storage credentials are configured; local demo uploads are written under ignored `instance/uploads/`.
+The browser assets are served by FastAPI from `frontend/` in local development. The hosted layout runs FastAPI on Render and publishes `frontend/` from Vercel; Vercel rewrites `/api/*` and `/static/*` to Render so browser requests keep the same origin, cookie, and CSRF behavior. SQLAlchemy models describe the relational data, and Alembic migrations evolve the schema. SQLite is the default local database. PostgreSQL is supported for hosted/review environments. Source files use a private Supabase Storage bucket when storage credentials are configured; local demo uploads are written under ignored `instance/uploads/`.
 
 ## Technology choices
 
@@ -162,8 +162,11 @@ For intake, the application parses email/text, spreadsheet rows, and selectable 
 │   ├── seed.py             # Fictional local demo data
 │   └── bootstrap.py        # Create named hosted users from private environment settings
 ├── frontend/               # Served HTML, CSS, and vanilla JavaScript
+├── Dockerfile              # Render API container; installs Tesseract OCR
 ├── migrations/             # Alembic environment and schema history
 ├── tests/                   # Cost and workflow tests
+├── render.yaml              # Render web service Blueprint and runtime settings
+│   └── vercel.json          # Vercel static frontend and same-origin API rewrites
 ├── scripts/build_submission.py # Builds the TDD PDF and two-file hand-in ZIP
 ├── .env.example             # Safe local configuration template
 ├── deployment.md            # Local and hosted setup notes
@@ -218,7 +221,9 @@ python -m uvicorn backend.main:app --reload --host 127.0.0.1 --port 8000
 
 Open <http://127.0.0.1:8000>. SQLite seeds the three RFQs from the brief and additional clearly labeled fictional examples on first start. Demo accounts are documented in [deployment.md](deployment.md); they are for local review only and must not be used in a shared deployment. For hosted configuration and bootstrap details, follow [deployment.md](deployment.md).
 
-There is no Dockerfile or Docker Compose configuration in this repository. For local OCR, install the Tesseract executable and appropriate language data separately; set `TESSERACT_CMD` if it is not on `PATH`.
+[`Dockerfile`](Dockerfile) and [`render.yaml`](render.yaml) define the hosted Render API container, including Tesseract. There is no Docker Compose configuration. The local steps above run directly with Python. For local OCR, install the Tesseract executable and appropriate language data separately; set `TESSERACT_CMD` if it is not on `PATH`.
+
+For the split Render/Vercel review deployment, follow [deployment.md](deployment.md). The Vercel rewrite origins must match the exact Render service URL after Render creates its service slug. Render Blueprint secrets are configured in Render's private environment form and are not stored in this repository.
 
 ## Configuration
 
