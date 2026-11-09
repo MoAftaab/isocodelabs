@@ -1,8 +1,8 @@
 # Technical Design Document — ForgeQuote
 
-**GitHub project:** https://github.com/MoAftaab/isocodelabs  
-**Live application:** Not deployed; see deployment.md  
-**Status:** Review build  
+**GitHub project:** https://github.com/MoAftaab/isocodelabs
+**Live application:** Not deployed; see deployment.md
+**Status:** Review build
 **Scope:** Company A's Software Engineering Core Build
 
 ## 1. Product and workflow
